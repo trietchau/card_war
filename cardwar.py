@@ -79,6 +79,37 @@ new_deck = Deck()
 print(new_deck)
 
 
+def game_loop():
+    print("\n\n\n")
+    print("Game will last until you run out of money or ")
+    card_deck = Deck()  # New card deck created after every round
+    card_deck.shuffle()
+
+
+def retry():
+    for i in range(3):
+        retry_ans = input("Do you want to play again? y/n: ")
+        if retry_ans.lower() not in ["yes", "y", "no", "n"]:
+            continue
+        else:
+            break  # Have this check to break out as soon as correct reply registered to prevent loops from stacking
+    if retry_ans.lower() in ["yes", "y"]:
+        return True
+    else:
+        return False
+
+
+def record_score():
+
+
 def main():
-    while True:
-        pass
+    still_game = True  # Play flag to keep playing if user answer yes.
+    while still_game == True:
+        game_loop()
+        still_game = retry()
+    else:
+        record_score()
+
+
+if __name__ == "__main__":
+    main()
