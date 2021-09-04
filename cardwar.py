@@ -8,8 +8,8 @@ values = {
     "Two": 2,   "Three": 3,  "Four": 4,
     "Five": 5,  "Six": 6,    "Seven": 7,
     "Eight": 8, "Nine": 9,   "Ten": 10,
-    "Jack": 11, "Queen": 12, "King": 13,
-    "Ace": 14
+    "Jack": 10, "Queen": 10, "King": 10,
+    "Ace": 11
 }
 
 
@@ -31,7 +31,7 @@ class Card:
 
 class Deck:
     def __init__(self):
-        self.deck = deck = []
+        self.deck = []
         for suit in suits:
             for rank in ranks:
                 self.deck.append(Card(suit, rank))
@@ -46,7 +46,7 @@ class Deck:
         print(".", end="", flush=True)
         time.sleep(.5)
         print(".")
-        self.deck = random.shuffle(self.deck)
+        random.shuffle(self.deck)
         print("Shuffle complete")
 
     def __str__(self):
@@ -60,30 +60,63 @@ class Deck:
 
 
 class Player():
-    def __init__(self, bal):
-        self.bal = bal
+    def __init__(self):
+        self.hand = []
+        self.value = 0
+        self.aces = 0
 
-    def bet(self, amount):
-        pass
+    def add_card(self, card):
+        self.hand.append(card)
 
-    def double_down(self, prev_bet):
-        if prev_bet * 2 <= self.bal:
-            pass
+    def calculate_values(self):
+        value_with_ace = 0
+        for card in self.hand:
+            if card.rank == "Ace":
+                self.aces += 1
+                value_with_ace += 1
+            else:
+                self.value += values[card.rank]  # Normal value if Ace = 11
+                value_with_ace += values[card.rank]  # Normal without ace
+        return f"Current card value: {self.value}"
 
-    def add_sub_bet(self, bet, win_condition):
+
+def Chip():
+    def __init__(self, amount, bet):
+        self.amount = amount
+        self.bet = bet
+
+    def process_bet(self, win_condition):
         if win_condition == True:
-            self.bal += bet
-
-
-new_deck = Deck()
-print(new_deck)
+            self.amount += self.bet
+        else:
+            self.amount -= self.bet
 
 
 def game_loop():
-    print("\n\n\n")
-    print("Game will last until you run out of money or ")
+    print("\n\n")
+    print("Welcome to Black Jack\nThe game will last until you run out of money or quit")
+    input("Type anything to continue\n")
     card_deck = Deck()  # New card deck created after every round
+
     card_deck.shuffle()
+
+    user = Player()
+    user.add_card(card_deck.give_card())
+    user.add_card(card_deck.give_card())
+
+    bot = Player()
+    bot.add_card(card_deck.give_card())
+    bot.add_card(card_deck.give_card())
+
+    display_hand(user, bot)
+    print(user.calculate_values())
+
+
+def display_hand(player, bot):
+    print(f"\nBot cards: \n{bot.hand[0]}" + "\n <   ?   >" * (len(bot.hand)-1))
+    print("\nYour cards: ")
+    for card in player.hand:
+        print(f"{card}")
 
 
 def retry():
@@ -100,6 +133,7 @@ def retry():
 
 
 def record_score():
+    pass
 
 
 def main():
