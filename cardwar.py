@@ -69,21 +69,22 @@ class Player():
         self.hand.append(card)
 
     def calculate_values(self):
-        value_with_ace = 0
         for card in self.hand:
             if card.rank == "Ace":
                 self.aces += 1
-                value_with_ace += 1
+                self.value += values[card.rank]
+                if self.value > 21:
+                    self.value -= 10  # Make ace value equal 1 instead of 11
             else:
-                self.value += values[card.rank]  # Normal value if Ace = 11
-                value_with_ace += values[card.rank]  # Normal without ace
-        return f"Current card value: {self.value}"
+                self.value += values[card.rank]
+        return self.value
 
 
-def Chip():
-    def __init__(self, amount, bet):
+class Chip():
+    def __init__(self, amount):
+        self.starting_amount = amount  # For leaderboard, CONSTANT
         self.amount = amount
-        self.bet = bet
+        self.bet = 0
 
     def process_bet(self, win_condition):
         if win_condition == True:
@@ -91,13 +92,23 @@ def Chip():
         else:
             self.amount -= self.bet
 
+    def take_bet(self):
+        while True:
+            try:
+                bet = input("How much do you want to bet? ")
+            except ValueError:
+                print("Must enter a number for your bet: ")
+                continue
+            if int(bet) <= self.amount:
+                self.bet = int(bet)
+                break
+            else:
+                print(
+                    "Your bet is bigger than your chips, which is: {self.amount}")
 
-def game_loop():
-    print("\n\n")
-    print("Welcome to Black Jack\nThe game will last until you run out of money or quit")
-    input("Type anything to continue\n")
+
+def game_loop(still_game: bool):
     card_deck = Deck()  # New card deck created after every round
-
     card_deck.shuffle()
 
     user = Player()
@@ -109,7 +120,28 @@ def game_loop():
     bot.add_card(card_deck.give_card())
 
     display_hand(user, bot)
-    print(user.calculate_values())
+
+    stand = False
+    bust = False
+    bot_stand = False
+
+    # ---------------------------------------Game loop for 1 round of black jack, however many hits------
+    while stand == False and bust == False:
+        if bot.calculate_values < 17:
+            hit(bot, card_deck)
+        else:
+            bot_stand = True
+        choice = input("Do you want to hit or stand? ")
+        if choice in ["yes", "y", "h", "hit"]:
+            hit(user, card_deck)
+            if user.calculate_values > 21:
+                bust = True
+        else:
+            stand = True
+
+
+def hit(player, deck):
+    player.add_card(deck.give_card())
 
 
 def display_hand(player, bot):
@@ -137,12 +169,30 @@ def record_score():
 
 
 def main():
+    print("\n\n")
+    print("Welcome to Black Jack\nThe game will last until you run out of money or quit")
+    input("Type anything to continue\n")
+
+    # --------------------------------------Take bet----------------------
+    while True:
+        chip_amount = input(
+            "How much money do you want to bring to the game? ")
+        try:
+            player_chip = Chip(int(chip_amount))
+        except ValueError:
+            print("Type a number")
+            continue
+        else:
+            break
+
     still_game = True  # Play flag to keep playing if user answer yes.
     while still_game == True:
-        game_loop()
-        still_game = retry()
+        still_game = game_loop(still_game)
     else:
-        record_score()
+        if retry() == False:
+            record_score()
+        else:
+            main()
 
 
 if __name__ == "__main__":
