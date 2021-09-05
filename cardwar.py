@@ -97,7 +97,7 @@ class Chip():
     def take_bet(self):
         while True:
             try:
-                bet = input("How much do you want to bet? ")
+                bet = input("\nHow much do you want to bet? ")
             except ValueError:
                 print("Must enter a number for your bet: ")
                 continue
@@ -118,7 +118,7 @@ def display_hand(player, bot):
 
 def retry():
     for i in range(3):
-        retry_ans = input("Do you want to play again? y/n: ")
+        retry_ans = input("\nDo you want to play again? y/n: ")
         if retry_ans.lower() not in ["yes", "y", "no", "n"]:
             continue
         else:
@@ -134,15 +134,20 @@ def record_score():
 
 
 def hit_or_stand():
-    pass
+    while True:
+        choice = input("Do you want to hit or stand: ")
+        if choice.lower() in ["hit", "h", "s", "stand"]:
+            return choice.lower()
+        else:
+            print("Wrong input, hit or stand only")
 
 
 def hit(player, deck):
     player.add_card(deck.give_card())
 
 
-def game_loop(still_game: bool, chip):
-    card_deck = Deck()  # New card deck created after every round
+def game_loop(still_game: bool, chip: Chip):
+    card_deck = Deck()  # New card deck created after every match
     card_deck.shuffle()
 
     user = Player()
@@ -157,29 +162,38 @@ def game_loop(still_game: bool, chip):
 
     display_hand(user, bot)
 
+    # stand[0] = bot, stand[1] = user
     # Both have to be True to escape loop
-    stand = [False, False]  # stand[0] = bot, stand[1] = user
-    # Only one has to be True to escape loop
-    bust = [False, False]   # bust[0] = bot, bust[1] = user
+    stand = [False, False]
+    # bust[0] = bot, bust[1] = user                  |    Use list and not dict because all() and any()
+    # Only one has to be True to escape loop         |    will look at keys rather than values
+    bust = [False, False]
 
-    # ---------------------------------------Game loop for 1 round of black jack, however many hits------
+    # ---------------------------------------Game loop for 1 round of black jack-----------------------------------
     while all(stand) == False and any(bust) == False:
+        print(f"Bot: {bot.calculate_values()}")
         if bot.calculate_values() < 17:
             hit(bot, card_deck)
             print(f"Bot: {bot.calculate_values()}")
-            if bot.calculate_values() > 21:
+            if bot.calculate_values() > 21:  # Check bust after every hit first 2 cards cannot bust
                 bust[0] = True
         else:
-            stand[1] = True
+            # If bot doesnt hit means value exceed 17, so change bot stand status to True
+            stand[0] = True
 
-        choice = input("\nDo you want to hit or stand? ")
+        # Check incase if user already stand and bot hasnt so it doesnt keep prompting hit_or_stand
+        print(f"User: {user.calculate_values()}")
+        if stand[1] == False:
+            choice = hit_or_stand()
         if choice in ["h", "hit"]:
             hit(user, card_deck)
-            display_hand(user, bot)
+            print(f"User: {user.calculate_values()}")
             if user.calculate_values() > 21:
                 bust[1] = True
         else:
-            bust[1] = True
+            stand[1] = True
+
+        display_hand(user, bot)
 
 
 def main():
