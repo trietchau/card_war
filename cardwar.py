@@ -71,13 +71,9 @@ class Player():
     def calculate_values(self):
         current_card_val = 0
         for card in self.hand:
-            if card.rank == "Ace":
-                current_card_val += values[card.rank]
-                # When add ace there's a chance it will bust, if that's the case then make the previous ace = 1
-                if current_card_val > 21:
-                    current_card_val -= 10
-            else:
-                current_card_val += values[card.rank]
+            current_card_val += values[card.rank]
+            if current_card_val > 21 and "Ace" in self.hand:
+                current_card_val -= 10
         self.value = current_card_val
         return self.value
 
@@ -88,8 +84,8 @@ class Chip():
         self.amount = amount
         self.bet = 0
 
-    def process_bet(self, win_condition, draw=False):
-        if win_condition == True and draw == False:
+    def process_bet(self, win_condition):
+        if win_condition == True:
             self.amount += self.bet
         else:
             self.amount -= self.bet
@@ -116,9 +112,9 @@ def display_hand(player, bot):
         print(f"{card}")
 
 
-def retry():
+def retry(message="\nDo you want to restart? y/n: "):
     for i in range(3):
-        retry_ans = input("\nDo you want to play again? y/n: ")
+        retry_ans = input(message)
         if retry_ans.lower() not in ["yes", "y", "no", "n"]:
             continue
         else:
@@ -129,8 +125,28 @@ def retry():
         return False
 
 
-def record_score():
-    pass
+def display_all(user, bot):
+    print(f"\nBot: ")
+    for card in bot.hand:
+        print(f"{card}")
+    print(f"Bot's value: {bot.calculate_values()}")
+    print(f"\nUser: ")
+    for card in user.hand:
+        print(f"{card}")
+    print(f"Your value: {user.calculate_values()}")
+
+
+def record_score(player_chip: Chip):
+    with open("leaderboard.txt", "a+") as score_file:
+        name = input("\nWhat do you want your name on the leaderboard to be: ")
+        print(
+            F"You started with {player_chip.starting_amount} and ended with {player_chip.amount}, ", end="")
+        if player_chip.starting_amount > player_chip.amount:
+            print(
+                f"a {round(player_chip.amount/player_chip.starting_amount*100-100, 2)}% loss")
+        else:
+            print(
+                f"a {round(player_chip.amount/player_chip.starting_amount*100-100,2)}% gain")
 
 
 def hit_or_stand():
@@ -146,7 +162,7 @@ def hit(player, deck):
     player.add_card(deck.give_card())
 
 
-def game_loop(still_game: bool, chip: Chip):
+def game_loop(still_game: bool, chip: Chip, double_down=False):
     card_deck = Deck()  # New card deck created after every match
     card_deck.shuffle()
 
@@ -159,7 +175,6 @@ def game_loop(still_game: bool, chip: Chip):
     bot.add_card(card_deck.give_card())
 
     chip.take_bet()
-
     display_hand(user, bot)
 
     # stand[0] = bot, stand[1] = user
@@ -171,10 +186,8 @@ def game_loop(still_game: bool, chip: Chip):
 
     # ---------------------------------------Game loop for 1 round of black jack-----------------------------------
     while all(stand) == False and any(bust) == False:
-        print(f"Bot: {bot.calculate_values()}")
         if bot.calculate_values() < 17:
             hit(bot, card_deck)
-            print(f"Bot: {bot.calculate_values()}")
             if bot.calculate_values() > 21:  # Check bust after every hit first 2 cards cannot bust
                 bust[0] = True
         else:
@@ -182,24 +195,46 @@ def game_loop(still_game: bool, chip: Chip):
             stand[0] = True
 
         # Check incase if user already stand and bot hasnt so it doesnt keep prompting hit_or_stand
-        print(f"User: {user.calculate_values()}")
         if stand[1] == False:
             choice = hit_or_stand()
         if choice in ["h", "hit"]:
             hit(user, card_deck)
-            print(f"User: {user.calculate_values()}")
             if user.calculate_values() > 21:
                 bust[1] = True
         else:
             stand[1] = True
 
         display_hand(user, bot)
+    display_all(user, bot)
+    if bust[0] == True and bust[1] != True:
+        chip.process_bet(True)
+        print(
+            f"\nDEALER BUST! You won the round, your chips is now {chip.amount}")
+    elif bust[0] != True and bust[1] == True:
+        chip.process_bet(False)
+        print(f"\nBUST! You lost the round, your chips is now {chip.amount}")
+    elif bust[0] == True and bust[1] == True:
+        print("Both dealer and player BUST, all chips returned")
+    elif user.value > bot.value:
+        chip.process_bet(True)
+        print(
+            f"\n{user.value} to {bot.value} You won the round, your chips is now {chip.amount}")
+    elif user.value < bot.value:
+        chip.process_bet(False)
+        print(
+            f"\n{user.value} to {bot.value} You lost the round, your chips is now {chip.amount}")
+    else:
+        print("\nDRAW! All chips returned")
+    if chip.amount == 0:
+        return False
+    else:
+        return retry("Do you want to play another round? y/n: ")
 
 
 def main():
     print("\n")
     print("Welcome to Black Jack!\nThe game will last until you run out of money or quit")
-    input("Type anything to continue\n")
+    input("Type anything to continue")
 
     # ------------------------------Set starting amount of money----------------------------------
     while True:
@@ -217,7 +252,7 @@ def main():
         still_game = game_loop(still_game, player_chip)
     else:
         if retry() == False:
-            record_score()
+            record_score(player_chip)
         else:
             main()
 
