@@ -64,6 +64,7 @@ class Player():
     def __init__(self):
         self.hand = []
         self.value = 0
+        self.ace = 0
 
     def add_card(self, card):
         self.hand.append(card)
@@ -71,9 +72,12 @@ class Player():
     def calculate_values(self):
         current_card_val = 0
         for card in self.hand:
+            if card.rank == "Ace":
+                self.ace += 1
             current_card_val += values[card.rank]
-            if current_card_val > 21 and "Ace" in self.hand:
+            if current_card_val > 21 and self.ace > 0:
                 current_card_val -= 10
+                self.ace -= 1
         self.value = current_card_val
         return self.value
 
@@ -137,16 +141,23 @@ def display_all(user, bot):
 
 
 def record_score(player_chip: Chip):
+    percent_gain_loss = round(
+        player_chip.amount/player_chip.starting_amount*100-100, 2)
+    print(
+        F"\nYou started with {player_chip.starting_amount} and ended with {player_chip.amount}")
+    record_choice = input("Do you want to record your score? y/n: ")
+    if record_choice.lower() in ["no", "n"]:
+        return None
     with open("leaderboard.txt", "a+") as score_file:
-        name = input("\nWhat do you want your name on the leaderboard to be: ")
-        print(
-            F"You started with {player_chip.starting_amount} and ended with {player_chip.amount}, ", end="")
+        name = input("What do you want your name on the leaderboard to be: ")
         if player_chip.starting_amount > player_chip.amount:
             print(
-                f"a {round(player_chip.amount/player_chip.starting_amount*100-100, 2)}% loss")
+                f"Score recorded! A {abs(percent_gain_loss)}% loss")
         else:
             print(
-                f"a {round(player_chip.amount/player_chip.starting_amount*100-100,2)}% gain")
+                f"Score recorded! A {abs(percent_gain_loss)}% gain")
+        score_file.write(
+            f"{name} | {player_chip.starting_amount} -> {player_chip.amount} | {percent_gain_loss}%\n")
 
 
 def hit_or_stand():
